@@ -1718,6 +1718,36 @@
         window.returnToMainMenu = returnToMainMenu;
         window.prestigeAndRestart = prestigeAndRestart;
 
+        //        // --- KEYBOARD EVENT LISTENER FOR PC CONTROLS ---
+        window.addEventListener('keydown', (e) => {
+            // Block exploration movement if any full-screen overlay or active combat is open
+            const battleScreen = document.getElementById('battle-screen');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const starterScreen = document.getElementById('starter-screen');
+            const victoryScreen = document.getElementById('victory-screen');
+            const switchModal = document.getElementById('battle-switch-modal');
+
+            if (!battleScreen.classList.contains('hidden') || 
+                !welcomeScreen.classList.contains('hidden') || 
+                !starterScreen.classList.contains('hidden') || 
+                !victoryScreen.classList.contains('hidden') || 
+                !switchModal.classList.contains('hidden')) {
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            
+            // Prevent standard browser page-scrolling when actively navigating
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
+                e.preventDefault();
+            }
+
+            if (key === 'arrowup' || key === 'w') movePlayer(0, -1);
+            if (key === 'arrowdown' || key === 's') movePlayer(0, 1);
+            if (key === 'arrowleft' || key === 'a') movePlayer(-1, 0);
+            if (key === 'arrowright' || key === 'd') movePlayer(1, 0);
+        });
+
         // --- INITIAL KICKSTART ---
         window.onload = function () {
             initializeFirebase();
