@@ -50,7 +50,7 @@
             <div class="flex flex-col gap-4 w-full max-w-sm">
                 <!-- Continue Button -->
                 <button id="continue-save-btn" disabled onclick="loadGame()" class="w-full py-4 px-6 rounded-2xl bg-slate-800 text-slate-500 border-4 border-slate-700 font-bold text-lg cursor-not-allowed transition-all">
-                    Loading Save... ⏳
+                    Checking Save... ⏳
                 </button>
                 <!-- New Game Button -->
                 <button onclick="startNewGameFlow()" class="w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 border-4 border-amber-300 font-black text-lg transition-all transform active:scale-95 shadow-lg">
@@ -58,7 +58,7 @@
                 </button>
             </div>
             <div class="text-[11px] text-slate-500 mt-6 max-w-xs font-semibold">
-                Your game progress is saved securely in the cloud! Connect to the web to reload your adventure anytime.
+                Your game progress is saved directly in your web browser. You can play, close, and return anytime!
             </div>
         </div>
 
@@ -381,7 +381,7 @@
         <span id="toast-text">Healed all party members!</span>
     </div>
 
-    <!-- SCRIPT (RPG ENGINE & CLOUD STORAGE LOGIC) -->
+    <!-- SCRIPT (RPG ENGINE & LOCAL/CLOUD STORAGE LOGIC) -->
     <script type="module">
         // Import Firebase Core and Database
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -392,11 +392,11 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'pocket-beasts-ultimate';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const LOCAL_SAVE_KEY = 'pocket_beasts_local_save_v1';
 
         let db = null;
         let auth = null;
         let userId = null;
-        let hasCheckedSavedGame = false;
 
         // --- Web Audio SFX Engine ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -502,7 +502,6 @@
 
         const TRAINER_NAMES = ["Youngster Joey", "Lass Carrie", "Tamer Rex", "Hiker Dave", "Skater Jax", "Rival Blue", "Ace Trainer Kim"];
 
-        // --- STREAMING_CHUNK: Initializing System State Variables ---
         // --- GAME STATE ---
         let playerState = {
             pos: { x: 4, y: 4 },
@@ -513,15 +512,15 @@
             },
             party: [],
             activeBeastIndex: 0,
-            currentLocationIndex: 1, // Progress tracking across locations
-            badges: [],              // Collected badge objects
-            cycle: 1                 // New Game+ Prestige Cycle Number
+            currentLocationIndex: 1, 
+            badges: [],              
+            cycle: 1                 
         };
 
         let mapSize = 10;
         let mapData = [];
         let battleState = null;
-        let mapTrainers = {}; // Track defeated/active trainers on current route
+        let mapTrainers = {}; 
 
         // Custom Notification Toast Handler
         function showToast(text, color = 'border-amber-500') {
@@ -536,53 +535,48 @@
             }, 3000);
         }
 
-        // --- STREAMING_CHUNK: Implementing Multi-Screen Map Generation Logic ---
         // --- MULTI-SCREEN PROCEDURAL MAP SETUP ---
         function generateMap() {
             mapData = [];
-            mapTrainers = {}; // Reset trainer tracking on screen transition
+            mapTrainers = {}; 
             const locIndex = playerState.currentLocationIndex;
             const isGymTown = locIndex % 5 === 0;
 
             for (let y = 0; y < mapSize; y++) {
                 let row = [];
                 for (let x = 0; x < mapSize; x++) {
-                    let tile = 'G'; // G = Green/Walking Grass
+                    let tile = 'G'; 
 
                     if (isGymTown) {
                         // --- Peaceful Gym Town Layout ---
-                        if (x === 1 && y === 1) tile = 'H';      // Hospital
-                        else if (x === 8 && y === 8) tile = 'S'; // Merchant Shop (Bottom Right)
-                        else if (x === 4 && y === 2) tile = '🏟️'; // Gym Building
-                        else if (x === 4 && y === 3) tile = 'L'; // Gym Leader standing slot
+                        if (x === 1 && y === 1) tile = 'H';      
+                        else if (x === 8 && y === 8) tile = 'S'; 
+                        else if (x === 4 && y === 2) tile = '🏟️'; 
+                        else if (x === 4 && y === 3) tile = 'L'; 
                         else if (y === 0 || y === 9 || x === 0 || x === 9) {
-                            // Block map boundaries except exit pathways
                             if (x !== 0 && x !== 9 && y !== 4 && y !== 5) {
-                                tile = 'O'; // Outer Trees
+                                tile = 'O'; 
                             }
                         }
                     } else {
                         // --- Dangerous Wild Route Layout ---
                         if ((x === 0 || x === 9 || y === 0 || y === 9) && Math.random() > 0.45) {
-                            tile = 'O'; // Tree barrier
+                            tile = 'O'; 
                         } else if (
                             (x >= 2 && x <= 7 && y >= 3 && y <= 8) || 
                             (x >= 5 && x <= 8 && y >= 1 && y <= 4)
                         ) {
-                            tile = 'T'; // Tall wild grass
+                            tile = 'T'; 
                         }
                         
-                        // Spawn a tiny healer camp on even Routes to avoid getting stuck
                         if (locIndex % 2 === 0 && x === 1 && y === 1) {
                             tile = 'H'; 
                         }
 
                         // Add dynamic trainers on Route maps (not gyms)
                         if (tile === 'G' && (x !== 4 || y !== 4)) {
-                            // Seed coordinates for trainers (max 2 per route)
                             if ((x === 2 && y === 2) || (x === 7 && y === 6)) {
-                                tile = '👤'; // Trainer/NPC Tile
-                                // Spawn a random active trainer on this tile
+                                tile = '👤'; 
                                 mapTrainers[`${x},${y}`] = {
                                     name: TRAINER_NAMES[Math.floor(Math.random() * TRAINER_NAMES.length)],
                                     defeated: false
@@ -597,14 +591,12 @@
             renderMap();
         }
 
-        // --- STREAMING_CHUNK: Rendering the Game Map Tiles ---
         function renderMap() {
             const grid = document.getElementById('map-grid');
             grid.innerHTML = '';
             const locIndex = playerState.currentLocationIndex;
             const isGymTown = locIndex % 5 === 0;
 
-            // Sync Header text
             let locName = `Route ${locIndex - Math.floor(locIndex / 5)}`;
             if (isGymTown) {
                 const gymNum = locIndex / 5;
@@ -641,13 +633,11 @@
                             tileEl.innerText = '🏟️';
                         } else if (tileType === 'L') {
                             tileEl.className += ' bg-slate-900 border border-amber-500 animate-bounce';
-                            
-                            // Check if Gym or Elite League
                             const gymNum = locIndex / 5;
                             if (gymNum <= 8) {
-                                tileEl.innerText = '👑'; // Gym Leader
+                                tileEl.innerText = '👑'; 
                             } else {
-                                tileEl.innerText = '🧙'; // League Champion
+                                tileEl.innerText = '🧙'; 
                             }
                         } else if (tileType === 'O') {
                             tileEl.className += ' bg-slate-950 border border-slate-900 text-emerald-800 text-lg';
@@ -661,13 +651,11 @@
                 }
             }
             
-            // Sync inventory labels on UI
             document.getElementById('inventory-balls').innerText = playerState.inventory.balls;
             document.getElementById('inventory-potions').innerText = playerState.inventory.potions;
             document.getElementById('player-gold').innerText = playerState.gold;
             document.getElementById('party-size').innerText = `${playerState.party.length}/6`;
 
-            // Draw Collected Badges
             const badgesContainer = document.getElementById('badges-container');
             badgesContainer.innerHTML = '';
             document.getElementById('badge-count-text').innerText = playerState.badges.length;
@@ -684,8 +672,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Managing Navigation Tabs and Lists ---
-        // --- DASHBOARD NAVIGATION ---
         function switchTab(tab) {
             playSound('click');
             const partyTab = document.getElementById('tab-party');
@@ -745,8 +731,6 @@
             });
         }
 
-        // --- STREAMING_CHUNK: Managing Game Flow Transitions ---
-        // --- GAME FLOW TRANSITIONS ---
         function startNewGameFlow() {
             playSound('click');
             document.getElementById('welcome-screen').classList.add('hidden');
@@ -755,14 +739,13 @@
 
         function returnToMainMenu() {
             playSound('click');
-            // Hide all overlays
             document.getElementById('starter-screen').classList.add('hidden');
             document.getElementById('overworld-screen').classList.add('hidden');
             document.getElementById('battle-screen').classList.add('hidden');
             document.getElementById('welcome-screen').classList.remove('hidden');
+            checkSavedGameOnBoot();
         }
 
-        // --- STARTER SELECTION ---
         function chooseStarter(element) {
             playSound('heal');
             let key = 'Sproutlet';
@@ -783,7 +766,6 @@
                 moves: { ...base.moves }
             };
 
-            // Initialize Player State fully
             playerState.pos = { x: 4, y: 4 };
             playerState.gold = 150;
             playerState.inventory = { balls: 5, potions: 3 };
@@ -800,11 +782,9 @@
             renderPartyList();
             showToast(`Received ${key}! Ready to explore!`, 'border-emerald-500');
 
-            // Quick auto-save on selection
             saveGame(true);
         }
 
-        // --- MERCHANT STORE ---
         function buyItem(item, price) {
             if (playerState.gold >= price) {
                 playerState.gold -= price;
@@ -818,17 +798,14 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Managing Navigation and Boundaries ---
-        // --- SCREEN-TO-SCREEN TRAVEL SYSTEM ---
         function movePlayer(dx, dy) {
             let nextX = playerState.pos.x + dx;
             let nextY = playerState.pos.y + dy;
 
-            // Handle Screen/Location Transitions when walking past boundaries!
             if (nextX < 0) {
                 if (playerState.currentLocationIndex > 1) {
                     playerState.currentLocationIndex--;
-                    playerState.pos.x = 9; // Arrive on the far-right edge of the previous map
+                    playerState.pos.x = 9; 
                     playSound('heal');
                     generateMap();
                     showToast(`Entered Location ${playerState.currentLocationIndex}!`, 'border-violet-500');
@@ -840,20 +817,18 @@
             }
             if (nextX > 9) {
                 playerState.currentLocationIndex++;
-                playerState.pos.x = 0; // Arrive on the far-left edge of the next map
+                playerState.pos.x = 0; 
                 playSound('heal');
                 generateMap();
                 showToast(`Entered Location ${playerState.currentLocationIndex}!`, 'border-violet-500');
                 return;
             }
 
-            // Standard Y bounds checks
             if (nextY < 0 || nextY > 9) {
                 playSound('wrong');
                 return;
             }
 
-            // Obstacle barrier check
             if (mapData[nextY][nextX] === 'O' || mapData[nextY][nextX] === '🏟️') {
                 playSound('wrong');
                 return;
@@ -872,15 +847,12 @@
                     triggerWildEncounter();
                 }
             } else if (tile === 'L') {
-                // Gym Leader / League Champion Interaction trigger!
                 triggerBossBattle();
             } else if (tile === '👤') {
-                // Rival Trainer Battle trigger!
                 triggerTrainerBattle(nextX, nextY);
             }
         }
 
-        // --- HEAL CENTER FUNCTION ---
         function healAllParty() {
             playSound('heal');
             playerState.party.forEach(b => {
@@ -890,8 +862,6 @@
             showToast("Your beasts are fully healed!", "border-rose-500");
         }
 
-        // --- STREAMING_CHUNK: Setting Up Trainer Combat Scenarios ---
-        // --- TRAINER ENCOUNTER SCENARIO ---
         function triggerTrainerBattle(x, y) {
             const coordinateKey = `${x},${y}`;
             const trainer = mapTrainers[coordinateKey];
@@ -900,7 +870,6 @@
 
             playSound('encounter');
 
-            // Select a random beast
             const monsterKeys = Object.keys(ALL_MONSTERS).filter(k => k !== 'Sproutlet' && k !== 'Pyrodrake' && k !== 'Tidallama');
             const key = monsterKeys[Math.floor(Math.random() * monsterKeys.length)];
             const base = ALL_MONSTERS[key];
@@ -932,32 +901,26 @@
                 turn: 'player'
             };
 
-            // Switch Screen Overlay
             document.getElementById('battle-screen').classList.remove('hidden');
             document.getElementById('encounter-warning').innerText = `⚔️ TRAINER BATTLE: ${trainer.name.toUpperCase()}`;
             document.getElementById('encounter-warning').className = "text-xs font-black text-indigo-400 retro-font tracking-wide";
             
-            // Hide ball throw during Trainer matches (cannot steal other people's beasts!)
             document.getElementById('catch-action-btn').classList.add('hidden');
             document.getElementById('flee-action-btn').classList.add('hidden');
 
             setupBattleUI();
         }
 
-        // --- STREAMING_CHUNK: Managing Boss Battles & Elite League Matchups ---
-        // --- GYM & LEAGUE CHAMPION BOSS BATTLES ---
         function triggerBossBattle() {
             playSound('encounter');
             const gymNum = playerState.currentLocationIndex / 5;
 
             if (gymNum <= 8) {
-                // Check if already beat this Gym in current cycle to avoid duplicate battles
                 if (playerState.badges.length >= gymNum) {
                     showToast("You have already conquered this Gym Leader!", 'border-amber-500');
                     return;
                 }
 
-                // Setup Gym Leader
                 const gym = GYM_LEADERS[gymNum - 1];
                 const base = ALL_MONSTERS[gym.monster];
                 const bossLevel = gym.levelOffset + (playerState.cycle - 1) * 12;
@@ -989,7 +952,6 @@
                 document.getElementById('encounter-warning').innerText = `🏆 GYM LEADER: ${gym.name.toUpperCase()}`;
                 document.getElementById('encounter-warning').className = "text-xs font-black text-amber-400 retro-font tracking-wide";
             } else {
-                // Elite League Championship Battle
                 if (playerState.badges.length < 8) {
                     showToast("You cannot enter the League! Collect all 8 Gym Badges first!", "border-rose-500");
                     return;
@@ -1026,27 +988,22 @@
                 document.getElementById('encounter-warning').className = "text-xs font-black text-red-500 retro-font tracking-wide animate-pulse";
             }
 
-            // Hide ball throwing & fleeing actions for boss battles
             document.getElementById('catch-action-btn').classList.add('hidden');
             document.getElementById('flee-action-btn').classList.add('hidden');
 
             document.getElementById('battle-screen').classList.remove('hidden');
             setupBattleUI();
 
-            // Set boss introductory dialog message
             document.getElementById('battle-log').innerText = `${battleState.gymData.name}: "${battleState.gymData.dialog}"`;
         }
 
-        // --- ENCOUNTER SCENARIOS ---
         function triggerWildEncounter() {
             playSound('encounter');
             
-            // Draw a random beast from database
             const monsterKeys = Object.keys(ALL_MONSTERS).filter(k => k !== 'Sproutlet' && k !== 'Pyrodrake' && k !== 'Tidallama');
             const key = monsterKeys[Math.floor(Math.random() * monsterKeys.length)];
             const wildBase = ALL_MONSTERS[key];
 
-            // Scales wild levels based on Location and Cycle
             const baseLevel = Math.max(2, Math.floor(playerState.currentLocationIndex * 1.2));
             const randLevel = baseLevel + (playerState.cycle - 1) * 10;
 
@@ -1072,19 +1029,15 @@
                 turn: 'player'
             };
 
-            // Switch Screen Overlay
             document.getElementById('battle-screen').classList.remove('hidden');
             document.getElementById('encounter-warning').innerText = "⚠️ WILD BEAST ENCOUNTER";
             document.getElementById('encounter-warning').className = "text-xs font-black text-rose-500 retro-font tracking-wide";
             
-            // Re-display ball throwing and fleeing mechanisms
             document.getElementById('catch-action-btn').classList.remove('hidden');
             document.getElementById('flee-action-btn').classList.remove('hidden');
             setupBattleUI();
         }
 
-        // --- STREAMING_CHUNK: Implementing Combat HUD Synchronization ---
-        // --- COMBAT HUD SYNCHRONIZATION ---
         function setupBattleUI() {
             const p = battleState.player;
             const e = battleState.enemy;
@@ -1147,8 +1100,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Managing Mid-Battle Switch Modal Actions ---
-        // --- MID-BATTLE PARTY SWITCH SELECTION ---
         function openBattleSwitchModal() {
             playSound('click');
             const container = document.getElementById('battle-switch-list');
@@ -1158,7 +1109,7 @@
 
             playerState.party.forEach((beast, idx) => {
                 const isCurrent = (idx === playerState.activeBeastIndex);
-                if (isCurrent) return; // Cannot switch to itself
+                if (isCurrent) return; 
 
                 const isDead = beast.hp <= 0;
                 const hpPercent = (beast.hp / beast.maxHp) * 100;
@@ -1214,13 +1165,10 @@
             playSound('heal');
             setupBattleUI();
 
-            // Switching takes 1 turn, let enemy counter-attack
             setControlsState(false);
             setTimeout(executeEnemyMove, 1500);
         }
 
-        // --- STREAMING_CHUNK: Processing Basic and Elemental Attacks ---
-        // --- ATTACK EXECUTION ---
         function executeMove(moveKey) {
             const p = battleState.player;
             const e = battleState.enemy;
@@ -1298,8 +1246,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Processing Victory States and EXP Awards ---
-        // --- COMBAT REWARDS & XP ENGINE ---
         function winBattle() {
             const p = battleState.player;
             const e = battleState.enemy;
@@ -1333,23 +1279,20 @@
             }, 2500);
         }
 
-        // --- TRAINER VICTORY ENGINE (Bonus Gold & EXP!) ---
         function winTrainerBattle() {
             const p = battleState.player;
             const e = battleState.enemy;
             const log = document.getElementById('battle-log');
 
-            // Double rewards compared to normal wild beasts
             const goldWon = Math.round((25 + (e.level * 8) + Math.random() * 15) * 1.5);
             const xpGained = Math.round((30 + (e.level * 10)) * 1.5);
 
             playerState.gold += goldWon;
             p.exp += xpGained;
 
-            // Flag trainer coordinate as clear on current map
             if (battleState.trainerCoord) {
                 const [tx, ty] = battleState.trainerCoord.split(',').map(Number);
-                mapData[ty][tx] = 'G'; // Revert back to plain grass
+                mapData[ty][tx] = 'G'; 
             }
 
             playSound('catch_success');
@@ -1374,7 +1317,6 @@
             }, 3000);
         }
 
-        // --- BOSS BATTLE REWARDS & BADGES ---
         function winBossBattle() {
             const p = battleState.player;
             const e = battleState.enemy;
@@ -1384,13 +1326,11 @@
             playSound('catch_success');
 
             if (battleState.isLeague) {
-                // Beat the League Champion! Trigger the Victory Screen
                 log.innerText = `AMAZING! You defeated Champion ${data.name}!`;
                 setTimeout(() => {
                     triggerLeagueVictory();
                 }, 2000);
             } else {
-                // Earned a Gym Badge
                 const goldWon = 150 + (e.level * 5);
                 playerState.gold += goldWon;
                 
@@ -1416,15 +1356,13 @@
             document.getElementById('next-cycle-num').innerText = playerState.cycle + 1;
         }
 
-        // --- PRESTIGE RESET (INFINITE CYCLE) ---
         function prestigeAndRestart() {
             playSound('heal');
             playerState.cycle++;
-            playerState.badges = []; // Reset Badges for the new hard cycle
-            playerState.currentLocationIndex = 1; // Return to the start
+            playerState.badges = []; 
+            playerState.currentLocationIndex = 1; 
             playerState.pos = { x: 4, y: 4 };
 
-            // Boost party levels by a small margin as prestige bonus
             playerState.party.forEach(b => {
                 b.hp = b.maxHp;
             });
@@ -1460,8 +1398,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Processing Ball Catch Metrics and EXP Awards ---
-        // --- CAPTURE BEASTS SYSTEM WITH XP AWARD ---
         function throwBeastBall() {
             if (playerState.inventory.balls <= 0) {
                 playSound('wrong');
@@ -1477,7 +1413,7 @@
             const log = document.getElementById('battle-log');
 
             const hpRatio = e.hp / e.maxHp;
-            const captureRate = 0.85 - (hpRatio * 0.5); // Low HP = High catch rate
+            const captureRate = 0.85 - (hpRatio * 0.5); 
 
             log.innerText = `You threw a Beast Ball at ${e.name}!`;
             playSound('catch_shake');
@@ -1490,7 +1426,6 @@
                 if (Math.random() < captureRate) {
                     playSound('catch_success');
                     
-                    // --- Award Capture EXP to active partner ---
                     const xpGained = Math.round(25 + (e.level * 8));
                     p.exp += xpGained;
                     
@@ -1507,7 +1442,6 @@
                         leveledUp = true;
                     }
 
-                    // Visually update the EXP bar immediately on the battle screen
                     updateHPBar('player');
 
                     if (playerState.party.length < 6) {
@@ -1533,8 +1467,6 @@
             }, 1200);
         }
 
-        // --- STREAMING_CHUNK: Processing Potion Application and Combat Utility ---
-        // --- BATTLE ITEM USAGE ---
         function usePotionInBattle() {
             const p = battleState.player;
             if (playerState.inventory.potions <= 0) {
@@ -1575,7 +1507,6 @@
             renderMap();
         }
 
-        // Visual Damage Popup Overlay Helper
         function showDamagePop(target, text) {
             const pop = document.getElementById(`${target}-damage-pop`);
             pop.innerText = text;
@@ -1585,26 +1516,31 @@
             }, 1200);
         }
 
-        // --- STREAMING_CHUNK: Setting Up Firestore Cloud Storage Operations ---
-        // --- CLOUD STORAGE SAVE & RECOVERY ENGINE ---
+        // --- CLOUD & LOCAL HYBRID MEMORY ---
         async function saveGame(silent = false) {
             if (!db || !userId) {
-                if (!silent) showToast("Cloud saving is currently offline.", "border-rose-500");
+                // FALLBACK TO LOCAL STORAGE
+                try {
+                    localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(playerState));
+                    if (!silent) {
+                        playSound('heal');
+                        showToast("Progress saved to browser storage! 💾", "border-emerald-500");
+                    }
+                } catch (e) {
+                    if (!silent) showToast("Local save failed.", "border-rose-500");
+                }
                 return;
             }
 
-            // Guarded Firestore Path Rule: /artifacts/{appId}/users/{userId}/saves/current
             const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
-            
             try {
                 await setDoc(saveDocRef, {
                     playerState: playerState,
                     timestamp: new Date().toISOString()
                 });
-                
                 if (!silent) {
                     playSound('heal');
-                    showToast("Game saved successfully!", "border-emerald-500");
+                    showToast("Game saved to cloud successfully!", "border-emerald-500");
                 }
             } catch (err) {
                 console.error("Save failed:", err);
@@ -1614,19 +1550,33 @@
 
         async function loadGame() {
             if (!db || !userId) {
-                showToast("Cannot connect to cloud database.", "border-rose-500");
+                // FALLBACK TO LOCAL STORAGE
+                const localSave = localStorage.getItem(LOCAL_SAVE_KEY);
+                if (localSave) {
+                    try {
+                        playerState = JSON.parse(localSave);
+                        playSound('heal');
+                        document.getElementById('welcome-screen').classList.add('hidden');
+                        document.getElementById('overworld-screen').classList.remove('hidden');
+                        generateMap();
+                        renderPartyList();
+                        showToast("Loaded from device storage! 📂", "border-emerald-500");
+                    } catch (e) {
+                        showToast("Failed to parse local save file.", "border-rose-500");
+                    }
+                } else {
+                    showToast("No local save found.", "border-rose-500");
+                }
                 return;
             }
 
             const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
-            
             try {
                 const docSnap = await getDoc(saveDocRef);
                 if (docSnap.exists()) {
                     const savedData = docSnap.data();
                     playerState = savedData.playerState;
 
-                    // Sync active values
                     playSound('heal');
                     document.getElementById('welcome-screen').classList.add('hidden');
                     document.getElementById('overworld-screen').classList.remove('hidden');
@@ -1644,13 +1594,27 @@
         }
 
         async function checkSavedGameOnBoot() {
-            if (!db || !userId) return;
+            const btn = document.getElementById('continue-save-btn');
+            
+            // Check Local Storage first (offline first strategy)
+            const localSaveExists = localStorage.getItem(LOCAL_SAVE_KEY);
+            if (localSaveExists) {
+                btn.disabled = false;
+                btn.innerText = "CONTINUE ADVENTURE 📂";
+                btn.className = "w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white border-4 border-indigo-400 font-bold text-lg transition-all transform active:scale-95 shadow-lg";
+                return;
+            }
+
+            if (!db || !userId) {
+                btn.disabled = true;
+                btn.innerText = "NO SAVES FOUND 📭";
+                btn.className = "w-full py-4 px-6 rounded-2xl bg-slate-800 text-slate-500 border-4 border-slate-700 font-bold text-lg cursor-not-allowed";
+                return;
+            }
 
             const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
-            
             try {
                 const docSnap = await getDoc(saveDocRef);
-                const btn = document.getElementById('continue-save-btn');
                 if (docSnap.exists()) {
                     btn.disabled = false;
                     btn.innerText = "CONTINUE ADVENTURE 📂";
@@ -1665,13 +1629,10 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Booting Authentication State Handlers ---
-        // --- BOOT PROCESS & AUTHENTICATION HANDLERS ---
         async function initializeFirebase() {
             if (!firebaseConfig) {
                 console.warn("No Firebase configuration detected. Running offline model.");
-                const btn = document.getElementById('continue-save-btn');
-                btn.innerText = "OFFLINE MODE 📴";
+                checkSavedGameOnBoot();
                 return;
             }
 
@@ -1680,7 +1641,6 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                // Authenticate before query priority
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
@@ -1693,11 +1653,13 @@
                         await checkSavedGameOnBoot();
                     } else {
                         userId = null;
+                        await checkSavedGameOnBoot();
                     }
                 });
 
             } catch (error) {
                 console.error("Firebase init crash caught:", error);
+                checkSavedGameOnBoot();
             }
         }
 
@@ -1718,9 +1680,8 @@
         window.returnToMainMenu = returnToMainMenu;
         window.prestigeAndRestart = prestigeAndRestart;
 
-        //        // --- KEYBOARD EVENT LISTENER FOR PC CONTROLS ---
+        // --- KEYBOARD EVENT LISTENER FOR PC CONTROLS ---
         window.addEventListener('keydown', (e) => {
-            // Block exploration movement if any full-screen overlay or active combat is open
             const battleScreen = document.getElementById('battle-screen');
             const welcomeScreen = document.getElementById('welcome-screen');
             const starterScreen = document.getElementById('starter-screen');
@@ -1736,8 +1697,6 @@
             }
 
             const key = e.key.toLowerCase();
-            
-            // Prevent standard browser page-scrolling when actively navigating
             if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
                 e.preventDefault();
             }
