@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pocket Beasts: Elemental Journeys</title>
+    <!-- Tailwind CSS for high fidelity modern utility styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            touch-action: manipulation;
+        }
+        .retro-font {
+            font-family: 'Press Start 2P', monospace;
+            line-height: 1.5;
+        }
+        /* Custom map grid styles */
+        .grid-tile {
+            aspect-ratio: 1;
+            transition: all 0.15s ease;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 select-none">
+
+    <!-- GAME CONTAINER -->
+    <div class="w-full max-w-4xl bg-slate-900 border-4 border-slate-700 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col min-h-[600px] justify-center items-center">
+        
+        <!-- Screen 0: Welcome / Home Screen -->
+        <div id="welcome-screen" class="w-full flex flex-col items-center justify-center py-10 z-10 text-center">
+            <div class="text-6xl mb-6 animate-bounce">🦖🔥⚡</div>
+            <h1 class="text-3xl font-black text-amber-400 mb-2 retro-font text-xs md:text-lg">POCKET BEASTS</h1>
+            <p class="text-slate-400 mb-8 font-bold">Elemental Journeys • Multi-Screen Adventure</p>
+            
+            <div class="flex flex-col gap-4 w-full max-w-sm">
+                <!-- Continue Button -->
+                <button id="continue-save-btn" disabled onclick="loadGame()" class="w-full py-4 px-6 rounded-2xl bg-slate-800 text-slate-500 border-4 border-slate-700 font-bold text-lg cursor-not-allowed transition-all">
+                    Loading Save... ⏳
+                </button>
+                <!-- New Game Button -->
+                <button onclick="startNewGameFlow()" class="w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 border-4 border-amber-300 font-black text-lg transition-all transform active:scale-95 shadow-lg">
+                    START NEW ADVENTURE 🚀
+                </button>
+            </div>
+            <div class="text-[11px] text-slate-500 mt-6 max-w-xs font-semibold">
+                Your game progress is saved securely in the cloud! Connect to the web to reload your adventure anytime.
+            </div>
+        </div>
+
+        <!-- Screen 1: Starter Selection (Shown at first boot or restart) -->
+        <div id="starter-screen" class="hidden w-full flex flex-col items-center justify-center py-10 z-10">
+            <h1 class="text-2xl font-black text-amber-400 mb-2 retro-font text-center text-xs md:text-sm">CHOOSE YOUR PARTNER</h1>
+            <p class="text-slate-400 text-center mb-8 font-bold">Select your starter partner Beast to begin your journey!</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-2xl">
+                <!-- Grass Starter -->
+                <button onclick="chooseStarter('Grass')" class="bg-emerald-950/40 hover:bg-emerald-900/60 border-4 border-emerald-500 rounded-2xl p-6 flex flex-col items-center transition-all transform hover:-translate-y-1 active:scale-95 group">
+                    <span class="text-6xl mb-4 group-hover:scale-115 transition-transform duration-200">🍃</span>
+                    <span class="text-lg font-black text-emerald-400">Sproutlet</span>
+                    <span class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Type: Grass</span>
+                    <p class="text-xs text-slate-300 text-center mt-3">High HP and life-stealing abilities. Strong against Water.</p>
+                </button>
+
+                <!-- Fire Starter -->
+                <button onclick="chooseStarter('Fire')" class="bg-rose-950/40 hover:bg-rose-900/60 border-4 border-rose-500 rounded-2xl p-6 flex flex-col items-center transition-all transform hover:-translate-y-1 active:scale-95 group">
+                    <span class="text-6xl mb-4 group-hover:scale-115 transition-transform duration-200">🔥</span>
+                    <span class="text-lg font-black text-rose-400">Pyrodrake</span>
+                    <span class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Type: Fire</span>
+                    <p class="text-xs text-slate-300 text-center mt-3">Aggressive flame bursts and critical damage. Strong against Grass.</p>
+                </button>
+
+                <!-- Water Starter -->
+                <button onclick="chooseStarter('Water')" class="bg-sky-950/40 hover:bg-sky-900/60 border-4 border-sky-500 rounded-2xl p-6 flex flex-col items-center transition-all transform hover:-translate-y-1 active:scale-95 group">
+                    <span class="text-6xl mb-4 group-hover:scale-115 transition-transform duration-200">💧</span>
+                    <span class="text-lg font-black text-sky-400">Tidallama</span>
+                    <span class="text-xs text-slate-400 mt-1 uppercase font-bold tracking-wider">Type: Water</span>
+                    <p class="text-xs text-slate-300 text-center mt-3">Exceptional shielding defense and deep hydro blasts. Strong against Fire.</p>
+                </button>
+            </div>
+            
+            <button onclick="returnToMainMenu()" class="mt-8 text-xs text-slate-500 hover:text-slate-300 uppercase tracking-widest font-extrabold py-2 px-4 border border-slate-800 rounded-xl">
+                ◀ Back to Main Menu
+            </button>
+        </div>
+
+        <!-- Screen 2: Map Explorer & Controls Dashboard (Main Overworld) -->
+        <div id="overworld-screen" class="hidden w-full flex flex-col md:flex-row gap-6 z-10">
+            <!-- Left Side: Interactive 2D World Map -->
+            <div class="flex-1 flex flex-col items-center">
+                <!-- Top HUD Bar -->
+                <div class="w-full flex justify-between items-center mb-3">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">🗺️</span>
+                            <div class="text-xs font-black text-amber-400 uppercase tracking-widest" id="location-title">Route 1 (Loc. 1)</div>
+                        </div>
+                        <div class="text-[10px] text-slate-400" id="cycle-label">Cycle 1 (Standard World)</div>
+                    </div>
+                    <div class="bg-amber-950/60 border-2 border-amber-500 px-3 py-1 rounded-full text-amber-400 font-extrabold text-sm flex items-center gap-1">
+                        🪙 <span id="player-gold">150</span>g
+                    </div>
+                </div>
+
+                <!-- 10x10 Overworld Map Grid -->
+                <div id="map-grid" class="grid grid-cols-10 gap-1 w-full bg-slate-950 p-2 rounded-2xl border-4 border-slate-700 shadow-inner">
+                    <!-- Dynamic Tiles injected here -->
+                </div>
+
+                <!-- Badges Display Dashboard -->
+                <div class="w-full mt-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-center">
+                    <div class="text-[10px] font-black uppercase text-slate-500 mb-2 tracking-wider">My Gym Badges (<span id="badge-count-text">0</span>/8)</div>
+                    <div id="badges-container" class="flex justify-center gap-2 text-xl min-h-[28px]">
+                        <!-- Badges injected dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Dashboard Panel (Stats, Party, Shop, D-pad) -->
+            <div class="w-full md:w-80 flex flex-col gap-4">
+                <!-- Navigation Tab Switchers -->
+                <div class="flex bg-slate-950 rounded-xl p-1 border border-slate-800 text-sm font-bold">
+                    <button onclick="switchTab('party')" id="tab-btn-party" class="flex-1 py-2 rounded-lg bg-slate-800 text-white">Party</button>
+                    <button onclick="switchTab('shop')" id="tab-btn-shop" class="flex-1 py-2 rounded-lg text-slate-400 hover:text-white">Shop</button>
+                </div>
+
+                <!-- Tab 1: Party View -->
+                <div id="tab-party" class="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between min-h-[250px]">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-300 uppercase tracking-widest mb-3 flex justify-between">
+                            <span>My Beasts Party</span>
+                            <span class="text-xs text-slate-500" id="party-size">1/6</span>
+                        </h3>
+                        <div id="party-list" class="flex flex-col gap-2 max-h-[170px] overflow-y-auto pr-1">
+                            <!-- Dynamic party list -->
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats Summary -->
+                    <div class="mt-2 pt-2 border-t border-slate-800 text-xs text-slate-400 space-y-1">
+                        <div>📦 Beast Balls: <span id="inventory-balls" class="text-white font-bold">5</span></div>
+                        <div>🧪 Potions (HP +50): <span id="inventory-potions" class="text-white font-bold">3</span></div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Shop View -->
+                <div id="tab-shop" class="hidden flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 min-h-[250px]">
+                    <h3 class="text-sm font-extrabold text-slate-300 uppercase tracking-widest mb-1">Mart Merchant 🏪</h3>
+                    <p class="text-[10px] text-slate-400 leading-tight">Stock up on gear to assist you on your journey.</p>
+                    
+                    <!-- Item 1 -->
+                    <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <div class="text-left">
+                            <div class="text-sm font-black text-amber-400">Beast Ball</div>
+                            <div class="text-xs text-slate-400">Catches wild monsters</div>
+                        </div>
+                        <button onclick="buyItem('balls', 20)" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg flex flex-col items-center">
+                            <span>Buy</span>
+                            <span class="text-[10px] text-amber-200">🪙 20g</span>
+                        </button>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                        <div class="text-left">
+                            <div class="text-sm font-black text-emerald-400">Potion</div>
+                            <div class="text-xs text-slate-400">Restores 50 HP to beast</div>
+                        </div>
+                        <button onclick="buyItem('potions', 15)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-3 rounded-lg flex flex-col items-center">
+                            <span>Buy</span>
+                            <span class="text-[10px] text-emerald-200">🪙 15g</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Friendly D-Pad (For touch targets/exploration) -->
+                <div class="bg-slate-950 rounded-2xl p-4 flex flex-col items-center justify-center border border-slate-800 shadow-inner">
+                    <div class="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Trainer Control Pad</div>
+                    <div class="grid grid-cols-3 gap-2 w-32 h-32">
+                        <div></div>
+                        <button onclick="movePlayer(0, -1)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 rounded-xl flex items-center justify-center text-xl text-white font-black active:scale-90 transition-all">▲</button>
+                        <div></div>
+                        <button onclick="movePlayer(-1, 0)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 rounded-xl flex items-center justify-center text-xl text-white font-black active:scale-90 transition-all">◀</button>
+                        <div class="bg-slate-900 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold">🚶</div>
+                        <button onclick="movePlayer(1, 0)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 rounded-xl flex items-center justify-center text-xl text-white font-black active:scale-90 transition-all">▶</button>
+                        <div></div>
+                        <button onclick="movePlayer(0, 1)" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 rounded-xl flex items-center justify-center text-xl text-white font-black active:scale-90 transition-all">▼</button>
+                        <div></div>
+                    </div>
+                </div>
+
+                <!-- Cloud Save & Reset Commands -->
+                <div class="grid grid-cols-2 gap-2 mt-1">
+                    <button onclick="saveGame()" class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs py-3 rounded-xl transition-all shadow border border-emerald-500 flex items-center justify-center gap-1">
+                        💾 Save Game
+                    </button>
+                    <button onclick="returnToMainMenu()" class="bg-rose-950 hover:bg-rose-900 active:scale-95 text-rose-300 font-bold text-xs py-3 rounded-xl transition-all border border-rose-900 flex items-center justify-center gap-1">
+                        🏠 Home Screen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Epic Full Screen Battle Arena Overlay -->
+        <div id="battle-screen" class="hidden absolute inset-0 bg-slate-950 z-50 p-6 flex flex-col justify-between overflow-y-auto">
+            
+            <!-- Turn indicator header -->
+            <div class="w-full flex justify-between items-center border-b-2 border-slate-800 pb-3">
+                <span id="encounter-warning" class="text-xs font-black text-rose-500 retro-font tracking-wide">⚠️ WILD BEAST ENCOUNTER</span>
+                <span id="battle-turn" class="bg-slate-800 px-3 py-1 rounded-full text-xs font-bold text-slate-300">Player Turn</span>
+            </div>
+
+            <!-- Main Battle Board: Active vs Wild Enemy -->
+            <div class="flex flex-col md:flex-row justify-around items-center flex-1 gap-6 my-4">
+                
+                <!-- Active Beast (Player) -->
+                <div class="w-full max-w-sm bg-slate-900/80 border-2 border-emerald-500 p-4 rounded-2xl flex items-center gap-4 relative">
+                    <div id="player-sprite-effect" class="text-6xl animate-bounce">🦖</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-end">
+                            <h4 id="player-battle-name" class="font-black text-lg text-emerald-400">Pyrodrake</h4>
+                            <span id="player-battle-level" class="text-xs font-bold text-slate-500">Lv.5</span>
+                        </div>
+                        
+                        <!-- Health Bar -->
+                        <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden mt-1.5 border border-slate-800">
+                            <div id="player-hp-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                            <span id="player-hp-text">HP: 100/100</span>
+                            <span id="player-type-badge" class="bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">Grass</span>
+                        </div>
+
+                        <!-- EXP Bar -->
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden mt-2">
+                            <div id="player-exp-bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 20%"></div>
+                        </div>
+                        <div class="text-[9px] text-slate-500 mt-0.5 text-right font-bold uppercase tracking-wider">EXP Progress</div>
+                    </div>
+                    <!-- Damage indicator overlay pop -->
+                    <div id="player-damage-pop" class="absolute -top-4 left-6 bg-rose-600 text-white font-black text-xs px-2 py-1 rounded hidden animate-bounce z-10">-15 HP</div>
+                </div>
+
+                <!-- Epic Battle Versus Clash Icon -->
+                <div class="text-4xl text-slate-700 retro-font hidden md:block">VS</div>
+
+                <!-- Wild Beast / Trainer Beast (Enemy) -->
+                <div class="w-full max-w-sm bg-slate-900/80 border-2 border-rose-500 p-4 rounded-2xl flex items-center gap-4 relative">
+                    <div id="enemy-sprite-effect" class="text-6xl animate-bounce">🦉</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-end">
+                            <h4 id="enemy-battle-name" class="font-black text-lg text-rose-400">Pidge</h4>
+                            <span id="enemy-battle-level" class="text-xs font-bold text-slate-500">Lv.4</span>
+                        </div>
+                        <!-- Health Bar -->
+                        <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden mt-1.5 border border-slate-800">
+                            <div id="enemy-hp-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                            <span id="enemy-hp-text">HP: 80/80</span>
+                            <span id="enemy-type-badge" class="bg-rose-950 text-rose-400 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">Flying</span>
+                        </div>
+                    </div>
+                    <!-- Damage indicator overlay pop -->
+                    <div id="enemy-damage-pop" class="absolute -top-4 right-6 bg-rose-600 text-white font-black text-xs px-2 py-1 rounded hidden animate-bounce z-10">-20 HP</div>
+                </div>
+
+            </div>
+
+            <!-- Battle Logs / Text Output -->
+            <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 min-h-[80px] max-h-[100px] overflow-y-auto mb-4 text-sm text-slate-300" id="battle-log">
+                A wild beast approaches! Choose your action.
+            </div>
+
+            <!-- Action panel: Attacks, Catch, Item, Switch -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <button onclick="executeMove('attack1')" id="move1-btn" class="bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 p-3 rounded-2xl text-left hover:scale-[1.02] active:scale-95 transition-all">
+                    <div id="move1-name" class="font-black text-sm text-white">Tackle</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">Basic attack</div>
+                </button>
+
+                <button onclick="executeMove('attack2')" id="move2-btn" class="bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 p-3 rounded-2xl text-left hover:scale-[1.02] active:scale-95 transition-all">
+                    <div id="move2-name" class="font-black text-sm text-amber-400">Special attack</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">Elemental burst</div>
+                </button>
+
+                <!-- Switch Beast (Mid-Battle Swap) -->
+                <button onclick="openBattleSwitchModal()" class="bg-indigo-950/80 hover:bg-indigo-900 border-2 border-indigo-600 p-3 rounded-2xl text-left hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3">
+                    <span class="text-3xl">🔄</span>
+                    <div>
+                        <div class="font-black text-sm text-indigo-400">Switch</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Swap active beast</div>
+                    </div>
+                </button>
+
+                <button id="catch-action-btn" onclick="throwBeastBall()" class="bg-amber-950/80 hover:bg-amber-900 border-2 border-amber-600 p-3 rounded-2xl text-left hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3">
+                    <span class="text-3xl">📦</span>
+                    <div>
+                        <div class="font-black text-sm text-amber-400">Beast Ball</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Qty: <span id="battle-balls-count">5</span></div>
+                    </div>
+                </button>
+
+                <button onclick="usePotionInBattle()" class="bg-emerald-950/80 hover:bg-emerald-900 border-2 border-emerald-600 p-3 rounded-2xl text-left hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3">
+                    <span class="text-3xl">🧪</span>
+                    <div>
+                        <div class="font-black text-sm text-emerald-400">Potion</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">Qty: <span id="battle-potions-count">3</span></div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Flee action -->
+            <div class="mt-3 flex justify-end">
+                <button id="flee-action-btn" onclick="fleeBattle()" class="text-xs text-rose-400 hover:text-rose-300 font-extrabold uppercase tracking-widest px-4 py-2 border border-rose-950 hover:bg-rose-950/55 rounded-xl transition-all">🏃 Flee Battle</button>
+            </div>
+
+        </div>
+
+        <!-- Switch Beast Modal (Hidden by default, displayed over battle screen) -->
+        <div id="battle-switch-modal" class="hidden absolute inset-0 bg-slate-950/95 z-[60] p-6 flex flex-col justify-center items-center">
+            <div class="w-full max-w-md bg-slate-900 border-4 border-indigo-500 rounded-3xl p-6 shadow-2xl space-y-4">
+                <h3 class="text-lg font-black text-indigo-400 retro-font text-center">SWAP ACTIVE BEAST</h3>
+                <p class="text-xs text-slate-400 text-center">Swapping beasts takes 1 action turn. Choose your next fighter:</p>
+                
+                <div id="battle-switch-list" class="flex flex-col gap-3 max-h-[250px] overflow-y-auto py-2">
+                    <!-- Switchable healthy beasts inject here -->
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="closeBattleSwitchModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl font-bold text-sm transition-all text-slate-300">
+                        Cancel & Return
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hall of Fame Champion Overlay Modal -->
+        <div id="victory-screen" class="hidden absolute inset-0 bg-slate-950 z-[100] p-8 flex flex-col justify-between items-center text-center">
+            <div class="my-auto space-y-6">
+                <div class="text-6xl animate-bounce">🏆⭐🎉</div>
+                <h1 class="text-3xl font-black text-yellow-400 retro-font">LEAGUE CHAMPION</h1>
+                <p class="text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                    Unbelievable! You have conquered the grand Elite League and written your name into the historical halls of legendary Trainers!
+                </p>
+                <div class="bg-slate-900 p-4 rounded-2xl border-2 border-yellow-500 inline-block">
+                    <div class="text-xs font-black text-amber-500 uppercase tracking-widest mb-2">My Hall of Fame Partner</div>
+                    <div class="flex items-center justify-center gap-3">
+                        <span id="fame-beast-emoji" class="text-5xl">🔥</span>
+                        <div class="text-left">
+                            <div id="fame-beast-name" class="font-black text-lg text-white">Pyrodrake</div>
+                            <div id="fame-beast-stats" class="text-xs text-slate-400">Level 50 • Fire Type</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="prestigeAndRestart()" class="w-full max-w-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-sm py-4 px-6 rounded-2xl transition-all shadow-lg hover:-translate-y-1 retro-font">
+                PRESTIGE & START CYCLE <span id="next-cycle-num">2</span> 🚀
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Notification toast wrapper (No window alerts) -->
+    <div id="toast-notification" class="fixed top-6 right-6 bg-slate-900 border-l-4 border-amber-500 text-white font-bold p-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-x-80 opacity-0 pointer-events-none z-[100] max-w-sm">
+        <span id="toast-text">Healed all party members!</span>
+    </div>
+
+    <!-- SCRIPT (RPG ENGINE & CLOUD STORAGE LOGIC) -->
+    <script type="module">
+        // Import Firebase Core and Database
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'pocket-beasts-ultimate';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db = null;
+        let auth = null;
+        let userId = null;
+        let hasCheckedSavedGame = false;
+
+        // --- Web Audio SFX Engine ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'step') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    osc.start();
+                    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.08);
+                    osc.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                    osc.start();
+                    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.25);
+                    osc.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'encounter') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    osc.start();
+                    osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+                    osc.frequency.linearRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+                    osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'heal') {
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.start();
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.3); // C6
+                    osc.stop(audioCtx.currentTime + 0.45);
+                } else if (type === 'catch_success') {
+                    osc.type = 'triangle';
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    osc.start();
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+                    osc.frequency.setValueAtTime(1174.66, audioCtx.currentTime + 0.24); // D6
+                    osc.stop(audioCtx.currentTime + 0.45);
+                } else if (type === 'catch_shake') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(90, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                }
+            } catch(e) {}
+        }
+
+        // --- GAME DATABASE ---
+        const ALL_MONSTERS = {
+            'Sproutlet': { emoji: '🍃', type: 'Grass', baseHp: 110, baseAtk: 18, baseDef: 14, moves: { m1: 'Razor Leaf', m2: 'Mega Drain' } },
+            'Pyrodrake': { emoji: '🔥', type: 'Fire', baseHp: 95, baseAtk: 24, baseDef: 11, moves: { m1: 'Scratch', m2: 'Ember Burst' } },
+            'Tidallama': { emoji: '💧', type: 'Water', baseHp: 105, baseAtk: 16, baseDef: 20, moves: { m1: 'Tackle', m2: 'Hydro Splash' } },
+            'Volty': { emoji: '⚡', type: 'Electric', baseHp: 80, baseAtk: 22, baseDef: 10, moves: { m1: 'Spark', m2: 'Thunder Bolt' } },
+            'Leafy': { emoji: '🌱', type: 'Grass', baseHp: 85, baseAtk: 14, baseDef: 12, moves: { m1: 'Vine Whip', m2: 'Foliage' } },
+            'Pidge': { emoji: '🦉', type: 'Flying', baseHp: 75, baseAtk: 15, baseDef: 10, moves: { m1: 'Peck', m2: 'Wing Slash' } },
+            'Ratty': { emoji: '🐭', type: 'Normal', baseHp: 70, baseAtk: 13, baseDef: 9, moves: { m1: 'Bite', m2: 'Quick Attack' } },
+            'Magmadillo': { emoji: '🌋', type: 'Fire', baseHp: 120, baseAtk: 17, baseDef: 18, moves: { m1: 'Bite', m2: 'Lava Armor' } }
+        };
+
+        const TYPE_MATCHUPS = {
+            'Fire': { 'Grass': 1.5, 'Water': 0.5, 'Fire': 1, 'Normal': 1, 'Flying': 1, 'Electric': 1 },
+            'Water': { 'Fire': 1.5, 'Grass': 0.5, 'Water': 1, 'Normal': 1, 'Flying': 1, 'Electric': 1 },
+            'Grass': { 'Water': 1.5, 'Fire': 0.5, 'Grass': 1, 'Normal': 1, 'Flying': 1, 'Electric': 1 },
+            'Normal': { 'Fire': 1, 'Water': 1, 'Grass': 1, 'Normal': 1, 'Flying': 1, 'Electric': 1 },
+            'Flying': { 'Grass': 1.2, 'Water': 1, 'Fire': 1, 'Normal': 1, 'Flying': 1, 'Electric': 1 },
+            'Electric': { 'Water': 1.5, 'Grass': 1, 'Fire': 1, 'Normal': 1, 'Flying': 1.2, 'Electric': 0.5 }
+        };
+
+        // --- THE 8 GYM LEADERS & LEAGUE CHAMPION DATABASE ---
+        const GYM_LEADERS = [
+            { name: "Brock ⛰️", badgeName: "Boulder Badge", badgeEmoji: "🪨", monster: "Magmadillo", levelOffset: 2, dialog: "My rocky defense is unbreakable! Show me what you've got!" },
+            { name: "Misty 💧", badgeName: "Cascade Badge", badgeEmoji: "🌊", monster: "Tidallama", levelOffset: 7, dialog: "My hydro-power will wash you away! Let's splash!" },
+            { name: "Lt. Surge ⚡", badgeName: "Thunder Badge", badgeEmoji: "⚡", monster: "Volty", levelOffset: 12, dialog: "You're entering an electric combat zone, baby!" },
+            { name: "Erika 🌈", badgeName: "Rainbow Badge", badgeEmoji: "🌈", monster: "Leafy", levelOffset: 17, dialog: "Nature holds the ultimate strength. Smell the blossoms!" },
+            { name: "Koga ☣️", badgeName: "Soul Badge", badgeEmoji: "☣️", monster: "Ratty", levelOffset: 22, dialog: "My secret toxin techniques will paralyze your courage!" },
+            { name: "Sabrina 🔮", badgeName: "Marsh Badge", badgeEmoji: "🔮", monster: "Pidge", levelOffset: 27, dialog: "My psychic birds saw this outcome... You stand no chance!" },
+            { name: "Blaine 🔥", badgeName: "Volcano Badge", badgeEmoji: "🔥", monster: "Pyrodrake", levelOffset: 32, dialog: "You better have burn heal! My fire burns hot!" },
+            { name: "Giovanni 🌿", badgeName: "Earth Badge", badgeEmoji: "🌿", monster: "Magmadillo", levelOffset: 38, dialog: "I am the boss of bosses! Welcome to the final test!" }
+        ];
+
+        const CHAMPION_LEAGUE = {
+            name: "Grand Master Blue 👑",
+            monster: "Volty",
+            levelOffset: 45,
+            dialog: "You've survived the 8 Gyms, but your journey ends at the gates of the Champions!"
+        };
+
+        const TRAINER_NAMES = ["Youngster Joey", "Lass Carrie", "Tamer Rex", "Hiker Dave", "Skater Jax", "Rival Blue", "Ace Trainer Kim"];
+
+        // --- STREAMING_CHUNK: Initializing System State Variables ---
+        // --- GAME STATE ---
+        let playerState = {
+            pos: { x: 4, y: 4 },
+            gold: 150,
+            inventory: {
+                balls: 5,
+                potions: 3
+            },
+            party: [],
+            activeBeastIndex: 0,
+            currentLocationIndex: 1, // Progress tracking across locations
+            badges: [],              // Collected badge objects
+            cycle: 1                 // New Game+ Prestige Cycle Number
+        };
+
+        let mapSize = 10;
+        let mapData = [];
+        let battleState = null;
+        let mapTrainers = {}; // Track defeated/active trainers on current route
+
+        // Custom Notification Toast Handler
+        function showToast(text, color = 'border-amber-500') {
+            const el = document.getElementById('toast-notification');
+            const txt = document.getElementById('toast-text');
+            el.className = `fixed top-6 right-6 bg-slate-900 border-l-4 ${color} text-white font-bold p-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-x-80 opacity-0 pointer-events-none z-[100] max-w-sm`;
+            txt.innerText = text;
+            
+            el.classList.remove('translate-x-80', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                el.classList.add('translate-x-80', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // --- STREAMING_CHUNK: Implementing Multi-Screen Map Generation Logic ---
+        // --- MULTI-SCREEN PROCEDURAL MAP SETUP ---
+        function generateMap() {
+            mapData = [];
+            mapTrainers = {}; // Reset trainer tracking on screen transition
+            const locIndex = playerState.currentLocationIndex;
+            const isGymTown = locIndex % 5 === 0;
+
+            for (let y = 0; y < mapSize; y++) {
+                let row = [];
+                for (let x = 0; x < mapSize; x++) {
+                    let tile = 'G'; // G = Green/Walking Grass
+
+                    if (isGymTown) {
+                        // --- Peaceful Gym Town Layout ---
+                        if (x === 1 && y === 1) tile = 'H';      // Hospital
+                        else if (x === 8 && y === 8) tile = 'S'; // Merchant Shop (Bottom Right)
+                        else if (x === 4 && y === 2) tile = '🏟️'; // Gym Building
+                        else if (x === 4 && y === 3) tile = 'L'; // Gym Leader standing slot
+                        else if (y === 0 || y === 9 || x === 0 || x === 9) {
+                            // Block map boundaries except exit pathways
+                            if (x !== 0 && x !== 9 && y !== 4 && y !== 5) {
+                                tile = 'O'; // Outer Trees
+                            }
+                        }
+                    } else {
+                        // --- Dangerous Wild Route Layout ---
+                        if ((x === 0 || x === 9 || y === 0 || y === 9) && Math.random() > 0.45) {
+                            tile = 'O'; // Tree barrier
+                        } else if (
+                            (x >= 2 && x <= 7 && y >= 3 && y <= 8) || 
+                            (x >= 5 && x <= 8 && y >= 1 && y <= 4)
+                        ) {
+                            tile = 'T'; // Tall wild grass
+                        }
+                        
+                        // Spawn a tiny healer camp on even Routes to avoid getting stuck
+                        if (locIndex % 2 === 0 && x === 1 && y === 1) {
+                            tile = 'H'; 
+                        }
+
+                        // Add dynamic trainers on Route maps (not gyms)
+                        if (tile === 'G' && (x !== 4 || y !== 4)) {
+                            // Seed coordinates for trainers (max 2 per route)
+                            if ((x === 2 && y === 2) || (x === 7 && y === 6)) {
+                                tile = '👤'; // Trainer/NPC Tile
+                                // Spawn a random active trainer on this tile
+                                mapTrainers[`${x},${y}`] = {
+                                    name: TRAINER_NAMES[Math.floor(Math.random() * TRAINER_NAMES.length)],
+                                    defeated: false
+                                };
+                            }
+                        }
+                    }
+                    row.push(tile);
+                }
+                mapData.push(row);
+            }
+            renderMap();
+        }
+
+        // --- STREAMING_CHUNK: Rendering the Game Map Tiles ---
+        function renderMap() {
+            const grid = document.getElementById('map-grid');
+            grid.innerHTML = '';
+            const locIndex = playerState.currentLocationIndex;
+            const isGymTown = locIndex % 5 === 0;
+
+            // Sync Header text
+            let locName = `Route ${locIndex - Math.floor(locIndex / 5)}`;
+            if (isGymTown) {
+                const gymNum = locIndex / 5;
+                locName = gymNum <= 8 ? `Gym City #${gymNum}` : `The Elite League Gates`;
+            }
+            document.getElementById('location-title').innerText = `${locName} (Loc. ${locIndex})`;
+            document.getElementById('cycle-label').innerText = `Cycle ${playerState.cycle} (Standard World)`;
+
+            for (let y = 0; y < mapSize; y++) {
+                for (let x = 0; x < mapSize; x++) {
+                    const tileType = mapData[y][x];
+                    const tileEl = document.createElement('div');
+                    tileEl.className = 'grid-tile rounded-md flex items-center justify-center font-bold text-xl relative shadow-sm';
+
+                    // Draw Player
+                    if (x === playerState.pos.x && y === playerState.pos.y) {
+                        tileEl.className += ' bg-amber-400 border-2 border-yellow-200 scale-105 z-10';
+                        tileEl.innerText = '🚶';
+                    } else {
+                        if (tileType === 'G') {
+                            tileEl.className += ' bg-emerald-900/30 hover:bg-emerald-900/45 border border-emerald-950/20';
+                            tileEl.innerText = '';
+                        } else if (tileType === 'T') {
+                            tileEl.className += ' bg-emerald-950/80 border border-emerald-900 text-emerald-500';
+                            tileEl.innerText = '🌾';
+                        } else if (tileType === 'H') {
+                            tileEl.className += ' bg-rose-950/90 border border-rose-600 text-rose-500 animate-pulse';
+                            tileEl.innerText = '🏨';
+                        } else if (tileType === 'S') {
+                            tileEl.className += ' bg-sky-950/90 border border-sky-600 text-sky-500';
+                            tileEl.innerText = '🏪';
+                        } else if (tileType === '🏟️') {
+                            tileEl.className += ' bg-violet-950/80 border border-violet-500';
+                            tileEl.innerText = '🏟️';
+                        } else if (tileType === 'L') {
+                            tileEl.className += ' bg-slate-900 border border-amber-500 animate-bounce';
+                            
+                            // Check if Gym or Elite League
+                            const gymNum = locIndex / 5;
+                            if (gymNum <= 8) {
+                                tileEl.innerText = '👑'; // Gym Leader
+                            } else {
+                                tileEl.innerText = '🧙'; // League Champion
+                            }
+                        } else if (tileType === 'O') {
+                            tileEl.className += ' bg-slate-950 border border-slate-900 text-emerald-800 text-lg';
+                            tileEl.innerText = '🌲';
+                        } else if (tileType === '👤') {
+                            tileEl.className += ' bg-indigo-950/80 border border-indigo-500 text-indigo-400 animate-pulse';
+                            tileEl.innerText = '👤';
+                        }
+                    }
+                    grid.appendChild(tileEl);
+                }
+            }
+            
+            // Sync inventory labels on UI
+            document.getElementById('inventory-balls').innerText = playerState.inventory.balls;
+            document.getElementById('inventory-potions').innerText = playerState.inventory.potions;
+            document.getElementById('player-gold').innerText = playerState.gold;
+            document.getElementById('party-size').innerText = `${playerState.party.length}/6`;
+
+            // Draw Collected Badges
+            const badgesContainer = document.getElementById('badges-container');
+            badgesContainer.innerHTML = '';
+            document.getElementById('badge-count-text').innerText = playerState.badges.length;
+            
+            if (playerState.badges.length === 0) {
+                badgesContainer.innerHTML = `<span class="text-xs font-bold text-slate-500 tracking-wide mt-1">Conquer Gyms to earn badges!</span>`;
+            } else {
+                playerState.badges.forEach(badge => {
+                    const badgeEl = document.createElement('span');
+                    badgeEl.title = badge.name;
+                    badgeEl.innerText = badge.emoji;
+                    badgesContainer.appendChild(badgeEl);
+                });
+            }
+        }
+
+        // --- STREAMING_CHUNK: Managing Navigation Tabs and Lists ---
+        // --- DASHBOARD NAVIGATION ---
+        function switchTab(tab) {
+            playSound('click');
+            const partyTab = document.getElementById('tab-party');
+            const shopTab = document.getElementById('tab-shop');
+            const partyBtn = document.getElementById('tab-btn-party');
+            const shopBtn = document.getElementById('tab-btn-shop');
+
+            if (tab === 'party') {
+                partyTab.classList.remove('hidden');
+                shopTab.classList.add('hidden');
+                partyBtn.className = "flex-1 py-2 rounded-lg bg-slate-800 text-white";
+                shopBtn.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white";
+            } else {
+                partyTab.classList.add('hidden');
+                shopTab.classList.remove('hidden');
+                partyBtn.className = "flex-1 py-2 rounded-lg text-slate-400 hover:text-white";
+                shopBtn.className = "flex-1 py-2 rounded-lg bg-slate-800 text-white";
+            }
+        }
+
+        function renderPartyList() {
+            const container = document.getElementById('party-list');
+            container.innerHTML = '';
+
+            playerState.party.forEach((beast, idx) => {
+                const isActive = idx === playerState.activeBeastIndex;
+                const card = document.createElement('div');
+                card.className = `flex justify-between items-center bg-slate-900 p-2.5 rounded-xl border transition-all cursor-pointer ${isActive ? 'border-amber-500 bg-amber-950/20' : 'border-slate-800 hover:border-slate-700'}`;
+                
+                card.onclick = () => {
+                    if (idx !== playerState.activeBeastIndex) {
+                        playerState.activeBeastIndex = idx;
+                        playSound('click');
+                        renderPartyList();
+                        renderMap();
+                    }
+                };
+
+                const hpPercent = (beast.hp / beast.maxHp) * 100;
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">${beast.emoji}</span>
+                        <div class="text-left">
+                            <div class="text-sm font-black flex items-center gap-1.5">
+                                <span class="text-white">${beast.name}</span>
+                                <span class="text-[10px] text-amber-500 font-bold uppercase">Lv.${beast.level}</span>
+                            </div>
+                            <div class="w-24 bg-slate-950 h-1.5 rounded-full overflow-hidden mt-1">
+                                <div class="bg-emerald-500 h-full" style="width: ${hpPercent}%"></div>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${beast.hp}/${beast.maxHp} HP</div>
+                        </div>
+                    </div>
+                    ${isActive ? '<span class="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Active</span>' : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- STREAMING_CHUNK: Managing Game Flow Transitions ---
+        // --- GAME FLOW TRANSITIONS ---
+        function startNewGameFlow() {
+            playSound('click');
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('starter-screen').classList.remove('hidden');
+        }
+
+        function returnToMainMenu() {
+            playSound('click');
+            // Hide all overlays
+            document.getElementById('starter-screen').classList.add('hidden');
+            document.getElementById('overworld-screen').classList.add('hidden');
+            document.getElementById('battle-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        }
+
+        // --- STARTER SELECTION ---
+        function chooseStarter(element) {
+            playSound('heal');
+            let key = 'Sproutlet';
+            if (element === 'Fire') key = 'Pyrodrake';
+            if (element === 'Water') key = 'Tidallama';
+
+            const base = ALL_MONSTERS[key];
+            const beast = {
+                name: key,
+                emoji: base.emoji,
+                type: base.type,
+                level: 5,
+                exp: 0,
+                maxHp: base.baseHp,
+                hp: base.baseHp,
+                atk: base.baseAtk,
+                def: base.baseDef,
+                moves: { ...base.moves }
+            };
+
+            // Initialize Player State fully
+            playerState.pos = { x: 4, y: 4 };
+            playerState.gold = 150;
+            playerState.inventory = { balls: 5, potions: 3 };
+            playerState.party = [beast];
+            playerState.activeBeastIndex = 0;
+            playerState.currentLocationIndex = 1;
+            playerState.badges = [];
+            playerState.cycle = 1;
+
+            document.getElementById('starter-screen').classList.add('hidden');
+            document.getElementById('overworld-screen').classList.remove('hidden');
+
+            generateMap();
+            renderPartyList();
+            showToast(`Received ${key}! Ready to explore!`, 'border-emerald-500');
+
+            // Quick auto-save on selection
+            saveGame(true);
+        }
+
+        // --- MERCHANT STORE ---
+        function buyItem(item, price) {
+            if (playerState.gold >= price) {
+                playerState.gold -= price;
+                playerState.inventory[item]++;
+                playSound('heal');
+                renderMap();
+                showToast(`Bought 1 ${item === 'balls' ? 'Beast Ball' : 'Potion'}!`, 'border-sky-500');
+            } else {
+                playSound('wrong');
+                showToast("Not enough gold!", "border-rose-500");
+            }
+        }
+
+        // --- STREAMING_CHUNK: Managing Navigation and Boundaries ---
+        // --- SCREEN-TO-SCREEN TRAVEL SYSTEM ---
+        function movePlayer(dx, dy) {
+            let nextX = playerState.pos.x + dx;
+            let nextY = playerState.pos.y + dy;
+
+            // Handle Screen/Location Transitions when walking past boundaries!
+            if (nextX < 0) {
+                if (playerState.currentLocationIndex > 1) {
+                    playerState.currentLocationIndex--;
+                    playerState.pos.x = 9; // Arrive on the far-right edge of the previous map
+                    playSound('heal');
+                    generateMap();
+                    showToast(`Entered Location ${playerState.currentLocationIndex}!`, 'border-violet-500');
+                    return;
+                } else {
+                    playSound('wrong');
+                    return;
+                }
+            }
+            if (nextX > 9) {
+                playerState.currentLocationIndex++;
+                playerState.pos.x = 0; // Arrive on the far-left edge of the next map
+                playSound('heal');
+                generateMap();
+                showToast(`Entered Location ${playerState.currentLocationIndex}!`, 'border-violet-500');
+                return;
+            }
+
+            // Standard Y bounds checks
+            if (nextY < 0 || nextY > 9) {
+                playSound('wrong');
+                return;
+            }
+
+            // Obstacle barrier check
+            if (mapData[nextY][nextX] === 'O' || mapData[nextY][nextX] === '🏟️') {
+                playSound('wrong');
+                return;
+            }
+
+            playerState.pos.x = nextX;
+            playerState.pos.y = nextY;
+            playSound('step');
+            renderMap();
+
+            const tile = mapData[nextY][nextX];
+            if (tile === 'H') {
+                healAllParty();
+            } else if (tile === 'T') {
+                if (Math.random() > 0.65) {
+                    triggerWildEncounter();
+                }
+            } else if (tile === 'L') {
+                // Gym Leader / League Champion Interaction trigger!
+                triggerBossBattle();
+            } else if (tile === '👤') {
+                // Rival Trainer Battle trigger!
+                triggerTrainerBattle(nextX, nextY);
+            }
+        }
+
+        // --- HEAL CENTER FUNCTION ---
+        function healAllParty() {
+            playSound('heal');
+            playerState.party.forEach(b => {
+                b.hp = b.maxHp;
+            });
+            renderPartyList();
+            showToast("Your beasts are fully healed!", "border-rose-500");
+        }
+
+        // --- STREAMING_CHUNK: Setting Up Trainer Combat Scenarios ---
+        // --- TRAINER ENCOUNTER SCENARIO ---
+        function triggerTrainerBattle(x, y) {
+            const coordinateKey = `${x},${y}`;
+            const trainer = mapTrainers[coordinateKey];
+            
+            if (!trainer || trainer.defeated) return;
+
+            playSound('encounter');
+
+            // Select a random beast
+            const monsterKeys = Object.keys(ALL_MONSTERS).filter(k => k !== 'Sproutlet' && k !== 'Pyrodrake' && k !== 'Tidallama');
+            const key = monsterKeys[Math.floor(Math.random() * monsterKeys.length)];
+            const base = ALL_MONSTERS[key];
+
+            const baseLevel = Math.max(3, Math.floor(playerState.currentLocationIndex * 1.3));
+            const randLevel = baseLevel + (playerState.cycle - 1) * 10;
+
+            const scaleMultiplier = 1.1 + (randLevel * 0.1);
+            const trainerBeast = {
+                name: `${trainer.name}'s ${key}`,
+                emoji: base.emoji,
+                type: base.type,
+                level: randLevel,
+                maxHp: Math.round(base.baseHp * scaleMultiplier),
+                hp: Math.round(base.baseHp * scaleMultiplier),
+                atk: Math.round(base.baseAtk * scaleMultiplier),
+                def: Math.round(base.baseDef * scaleMultiplier),
+                moves: { ...base.moves }
+            };
+
+            battleState = {
+                player: playerState.party[playerState.activeBeastIndex],
+                enemy: trainerBeast,
+                isCatching: false,
+                isGym: false,
+                isTrainer: true,
+                trainerCoord: coordinateKey,
+                trainerName: trainer.name,
+                turn: 'player'
+            };
+
+            // Switch Screen Overlay
+            document.getElementById('battle-screen').classList.remove('hidden');
+            document.getElementById('encounter-warning').innerText = `⚔️ TRAINER BATTLE: ${trainer.name.toUpperCase()}`;
+            document.getElementById('encounter-warning').className = "text-xs font-black text-indigo-400 retro-font tracking-wide";
+            
+            // Hide ball throw during Trainer matches (cannot steal other people's beasts!)
+            document.getElementById('catch-action-btn').classList.add('hidden');
+            document.getElementById('flee-action-btn').classList.add('hidden');
+
+            setupBattleUI();
+        }
+
+        // --- STREAMING_CHUNK: Managing Boss Battles & Elite League Matchups ---
+        // --- GYM & LEAGUE CHAMPION BOSS BATTLES ---
+        function triggerBossBattle() {
+            playSound('encounter');
+            const gymNum = playerState.currentLocationIndex / 5;
+
+            if (gymNum <= 8) {
+                // Check if already beat this Gym in current cycle to avoid duplicate battles
+                if (playerState.badges.length >= gymNum) {
+                    showToast("You have already conquered this Gym Leader!", 'border-amber-500');
+                    return;
+                }
+
+                // Setup Gym Leader
+                const gym = GYM_LEADERS[gymNum - 1];
+                const base = ALL_MONSTERS[gym.monster];
+                const bossLevel = gym.levelOffset + (playerState.cycle - 1) * 12;
+                const scaleMultiplier = 1 + (bossLevel * 0.12);
+
+                const bossBeast = {
+                    name: `${gym.name}'s ${gym.monster}`,
+                    emoji: base.emoji,
+                    type: base.type,
+                    level: bossLevel,
+                    maxHp: Math.round(base.baseHp * scaleMultiplier),
+                    hp: Math.round(base.baseHp * scaleMultiplier),
+                    atk: Math.round(base.baseAtk * scaleMultiplier),
+                    def: Math.round(base.baseDef * scaleMultiplier),
+                    moves: { ...base.moves }
+                };
+
+                battleState = {
+                    player: playerState.party[playerState.activeBeastIndex],
+                    enemy: bossBeast,
+                    isCatching: false,
+                    isGym: true,
+                    isTrainer: false,
+                    isLeague: false,
+                    gymData: gym,
+                    turn: 'player'
+                };
+
+                document.getElementById('encounter-warning').innerText = `🏆 GYM LEADER: ${gym.name.toUpperCase()}`;
+                document.getElementById('encounter-warning').className = "text-xs font-black text-amber-400 retro-font tracking-wide";
+            } else {
+                // Elite League Championship Battle
+                if (playerState.badges.length < 8) {
+                    showToast("You cannot enter the League! Collect all 8 Gym Badges first!", "border-rose-500");
+                    return;
+                }
+
+                const base = ALL_MONSTERS[CHAMPION_LEAGUE.monster];
+                const bossLevel = CHAMPION_LEAGUE.levelOffset + (playerState.cycle - 1) * 15;
+                const scaleMultiplier = 1 + (bossLevel * 0.15);
+
+                const bossBeast = {
+                    name: `Champion's ${CHAMPION_LEAGUE.monster}`,
+                    emoji: base.emoji,
+                    type: base.type,
+                    level: bossLevel,
+                    maxHp: Math.round(base.baseHp * scaleMultiplier),
+                    hp: Math.round(base.baseHp * scaleMultiplier),
+                    atk: Math.round(base.baseAtk * scaleMultiplier),
+                    def: Math.round(base.baseDef * scaleMultiplier),
+                    moves: { ...base.moves }
+                };
+
+                battleState = {
+                    player: playerState.party[playerState.activeBeastIndex],
+                    enemy: bossBeast,
+                    isCatching: false,
+                    isGym: true,
+                    isTrainer: false,
+                    isLeague: true,
+                    gymData: CHAMPION_LEAGUE,
+                    turn: 'player'
+                };
+
+                document.getElementById('encounter-warning').innerText = `🔥 ELITE LEAGUE CHAMPIONSHIP`;
+                document.getElementById('encounter-warning').className = "text-xs font-black text-red-500 retro-font tracking-wide animate-pulse";
+            }
+
+            // Hide ball throwing & fleeing actions for boss battles
+            document.getElementById('catch-action-btn').classList.add('hidden');
+            document.getElementById('flee-action-btn').classList.add('hidden');
+
+            document.getElementById('battle-screen').classList.remove('hidden');
+            setupBattleUI();
+
+            // Set boss introductory dialog message
+            document.getElementById('battle-log').innerText = `${battleState.gymData.name}: "${battleState.gymData.dialog}"`;
+        }
+
+        // --- ENCOUNTER SCENARIOS ---
+        function triggerWildEncounter() {
+            playSound('encounter');
+            
+            // Draw a random beast from database
+            const monsterKeys = Object.keys(ALL_MONSTERS).filter(k => k !== 'Sproutlet' && k !== 'Pyrodrake' && k !== 'Tidallama');
+            const key = monsterKeys[Math.floor(Math.random() * monsterKeys.length)];
+            const wildBase = ALL_MONSTERS[key];
+
+            // Scales wild levels based on Location and Cycle
+            const baseLevel = Math.max(2, Math.floor(playerState.currentLocationIndex * 1.2));
+            const randLevel = baseLevel + (playerState.cycle - 1) * 10;
+
+            const scaleMultiplier = 1 + (randLevel * 0.1);
+            const wildBeast = {
+                name: key,
+                emoji: wildBase.emoji,
+                type: wildBase.type,
+                level: randLevel,
+                maxHp: Math.round(wildBase.baseHp * scaleMultiplier),
+                hp: Math.round(wildBase.baseHp * scaleMultiplier),
+                atk: Math.round(wildBase.baseAtk * scaleMultiplier),
+                def: Math.round(wildBase.baseDef * scaleMultiplier),
+                moves: { ...wildBase.moves }
+            };
+
+            battleState = {
+                player: playerState.party[playerState.activeBeastIndex],
+                enemy: wildBeast,
+                isCatching: false,
+                isGym: false,
+                isTrainer: false,
+                turn: 'player'
+            };
+
+            // Switch Screen Overlay
+            document.getElementById('battle-screen').classList.remove('hidden');
+            document.getElementById('encounter-warning').innerText = "⚠️ WILD BEAST ENCOUNTER";
+            document.getElementById('encounter-warning').className = "text-xs font-black text-rose-500 retro-font tracking-wide";
+            
+            // Re-display ball throwing and fleeing mechanisms
+            document.getElementById('catch-action-btn').classList.remove('hidden');
+            document.getElementById('flee-action-btn').classList.remove('hidden');
+            setupBattleUI();
+        }
+
+        // --- STREAMING_CHUNK: Implementing Combat HUD Synchronization ---
+        // --- COMBAT HUD SYNCHRONIZATION ---
+        function setupBattleUI() {
+            const p = battleState.player;
+            const e = battleState.enemy;
+
+            document.getElementById('player-battle-name').innerText = p.name;
+            document.getElementById('player-battle-level').innerText = `Lv.${p.level}`;
+            document.getElementById('player-sprite-effect').innerText = p.emoji;
+            document.getElementById('player-type-badge').innerText = p.type;
+            updateHPBar('player');
+
+            document.getElementById('enemy-battle-name').innerText = e.name;
+            document.getElementById('enemy-battle-level').innerText = `Lv.${e.level}`;
+            document.getElementById('enemy-sprite-effect').innerText = e.emoji;
+            document.getElementById('enemy-type-badge').innerText = e.type;
+            updateHPBar('enemy');
+
+            document.getElementById('move1-name').innerText = p.moves.m1;
+            document.getElementById('move2-name').innerText = p.moves.m2;
+
+            document.getElementById('battle-balls-count').innerText = playerState.inventory.balls;
+            document.getElementById('battle-potions-count').innerText = playerState.inventory.potions;
+
+            if (!battleState.isGym && !battleState.isTrainer) {
+                document.getElementById('battle-log').innerText = `A wild Level ${e.level} ${e.name} approaches!`;
+            }
+            setControlsState(true);
+        }
+
+        function updateHPBar(target) {
+            const entity = target === 'player' ? battleState.player : battleState.enemy;
+            const percent = Math.max(0, (entity.hp / entity.maxHp) * 100);
+
+            const hpBar = document.getElementById(`${target}-hp-bar`);
+            const hpText = document.getElementById(`${target}-hp-text`);
+
+            hpBar.style.width = `${percent}%`;
+            hpText.innerText = `HP: ${entity.hp}/${entity.maxHp}`;
+
+            if (percent < 25) {
+                hpBar.className = "bg-rose-500 h-full transition-all duration-300 animate-pulse";
+            } else if (percent < 50) {
+                hpBar.className = "bg-amber-500 h-full transition-all duration-300";
+            } else {
+                hpBar.className = "bg-emerald-500 h-full transition-all duration-300";
+            }
+
+            if (target === 'player') {
+                const expPercent = (entity.exp / 100) * 100;
+                document.getElementById('player-exp-bar').style.width = `${expPercent}%`;
+            }
+        }
+
+        function setControlsState(enabled) {
+            if (enabled) {
+                document.getElementById('battle-turn').innerText = "Trainer's Turn";
+                document.getElementById('battle-turn').className = "bg-emerald-950 px-3 py-1 rounded-full text-xs font-bold text-emerald-400 border border-emerald-800";
+            } else {
+                document.getElementById('battle-turn').innerText = "Beast's Turn";
+                document.getElementById('battle-turn').className = "bg-rose-950 px-3 py-1 rounded-full text-xs font-bold text-rose-400 border border-rose-800";
+            }
+        }
+
+        // --- STREAMING_CHUNK: Managing Mid-Battle Switch Modal Actions ---
+        // --- MID-BATTLE PARTY SWITCH SELECTION ---
+        function openBattleSwitchModal() {
+            playSound('click');
+            const container = document.getElementById('battle-switch-list');
+            container.innerHTML = '';
+
+            let hasLiveBeast = false;
+
+            playerState.party.forEach((beast, idx) => {
+                const isCurrent = (idx === playerState.activeBeastIndex);
+                if (isCurrent) return; // Cannot switch to itself
+
+                const isDead = beast.hp <= 0;
+                const hpPercent = (beast.hp / beast.maxHp) * 100;
+
+                const card = document.createElement('button');
+                card.disabled = isDead;
+                card.className = `w-full text-left bg-slate-800 p-3 rounded-xl border flex justify-between items-center transition-all ${isDead ? 'opacity-40 border-slate-900 cursor-not-allowed' : 'border-indigo-900/60 hover:border-indigo-500 hover:bg-slate-700/80 active:scale-95'}`;
+
+                if (!isDead) hasLiveBeast = true;
+
+                card.onclick = () => {
+                    executeBattleSwitch(idx);
+                };
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">${beast.emoji}</span>
+                        <div class="text-left">
+                            <div class="font-bold text-white text-sm">${beast.name} <span class="text-xs text-amber-500 font-black">Lv.${beast.level}</span></div>
+                            <div class="text-[11px] text-slate-400">${beast.hp}/${beast.maxHp} HP</div>
+                        </div>
+                    </div>
+                    <div class="w-20 bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-emerald-500 h-full" style="width: ${hpPercent}%"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (!hasLiveBeast) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = "text-center text-xs text-rose-400 font-bold py-4";
+                emptyMsg.innerText = "No other active partners available in party!";
+                container.appendChild(emptyMsg);
+            }
+
+            document.getElementById('battle-switch-modal').classList.remove('hidden');
+        }
+
+        function closeBattleSwitchModal() {
+            document.getElementById('battle-switch-modal').classList.add('hidden');
+        }
+
+        function executeBattleSwitch(targetIndex) {
+            closeBattleSwitchModal();
+            const oldBeast = battleState.player;
+            playerState.activeBeastIndex = targetIndex;
+            battleState.player = playerState.party[targetIndex];
+
+            const log = document.getElementById('battle-log');
+            log.innerText = `${oldBeast.name} was recalled! Go, ${battleState.player.name}!`;
+
+            playSound('heal');
+            setupBattleUI();
+
+            // Switching takes 1 turn, let enemy counter-attack
+            setControlsState(false);
+            setTimeout(executeEnemyMove, 1500);
+        }
+
+        // --- STREAMING_CHUNK: Processing Basic and Elemental Attacks ---
+        // --- ATTACK EXECUTION ---
+        function executeMove(moveKey) {
+            const p = battleState.player;
+            const e = battleState.enemy;
+            const log = document.getElementById('battle-log');
+
+            const moveName = moveKey === 'attack1' ? p.moves.m1 : p.moves.m2;
+            let power = moveKey === 'attack1' ? 12 : 24;
+            let rawDmg = power * (p.atk / e.def);
+            
+            const mult = TYPE_MATCHUPS[p.type]?.[e.type] || 1;
+            let finalDmg = Math.round(rawDmg * mult);
+
+            if (finalDmg < 5) finalDmg = 5;
+
+            e.hp = Math.max(0, e.hp - finalDmg);
+            playSound('hit');
+
+            showDamagePop('enemy', `-${finalDmg} HP`);
+
+            let message = `${p.name} used ${moveName}! `;
+            if (mult > 1.2) message += "It's super effective! ";
+            if (mult < 0.8) message += "It's not very effective... ";
+            message += `Dealt ${finalDmg} damage to ${e.name}!`;
+
+            log.innerText = message;
+            updateHPBar('enemy');
+
+            if (e.hp <= 0) {
+                if (battleState.isGym) {
+                    winBossBattle();
+                } else if (battleState.isTrainer) {
+                    winTrainerBattle();
+                } else {
+                    winBattle();
+                }
+            } else {
+                setControlsState(false);
+                setTimeout(executeEnemyMove, 1500);
+            }
+        }
+
+        function executeEnemyMove() {
+            if (!battleState || battleState.enemy.hp <= 0) return;
+
+            const p = battleState.player;
+            const e = battleState.enemy;
+            const log = document.getElementById('battle-log');
+
+            const useSpecial = Math.random() > 0.5;
+            const moveName = useSpecial ? e.moves.m2 : e.moves.m1;
+            const power = useSpecial ? 20 : 10;
+
+            let rawDmg = power * (e.atk / p.def);
+            const mult = TYPE_MATCHUPS[e.type]?.[p.type] || 1;
+            let finalDmg = Math.round(rawDmg * mult);
+            if (finalDmg < 4) finalDmg = 4;
+
+            p.hp = Math.max(0, p.hp - finalDmg);
+            playSound('hit');
+
+            showDamagePop('player', `-${finalDmg} HP`);
+
+            let message = `${e.name} used ${moveName}! `;
+            if (mult > 1.2) message += "It's super effective! ";
+            if (mult < 0.8) message += "It's not very effective... ";
+            message += `Dealt ${finalDmg} damage to ${p.name}!`;
+
+            log.innerText = message;
+            updateHPBar('player');
+
+            if (p.hp <= 0) {
+                loseActiveBeast();
+            } else {
+                setControlsState(true);
+            }
+        }
+
+        // --- STREAMING_CHUNK: Processing Victory States and EXP Awards ---
+        // --- COMBAT REWARDS & XP ENGINE ---
+        function winBattle() {
+            const p = battleState.player;
+            const e = battleState.enemy;
+            const log = document.getElementById('battle-log');
+
+            const goldWon = Math.round(15 + (e.level * 4) + Math.random() * 10);
+            const xpGained = Math.round(20 + (e.level * 6));
+
+            playerState.gold += goldWon;
+            p.exp += xpGained;
+
+            playSound('catch_success');
+            log.innerText = `${e.name} fainted! You won the battle! \nGained 🪙 ${goldWon}g and ${xpGained} XP!`;
+
+            let leveledUp = false;
+            if (p.exp >= 100) {
+                p.level++;
+                p.exp = p.exp - 100;
+                p.maxHp = Math.round(p.maxHp * 1.12);
+                p.hp = p.maxHp;
+                p.atk = Math.round(p.atk * 1.1);
+                p.def = Math.round(p.def * 1.1);
+                leveledUp = true;
+            }
+
+            setTimeout(() => {
+                if (leveledUp) {
+                    showToast(`${p.name} leveled up to Lv.${p.level}!`, 'border-yellow-400');
+                }
+                closeBattle();
+            }, 2500);
+        }
+
+        // --- TRAINER VICTORY ENGINE (Bonus Gold & EXP!) ---
+        function winTrainerBattle() {
+            const p = battleState.player;
+            const e = battleState.enemy;
+            const log = document.getElementById('battle-log');
+
+            // Double rewards compared to normal wild beasts
+            const goldWon = Math.round((25 + (e.level * 8) + Math.random() * 15) * 1.5);
+            const xpGained = Math.round((30 + (e.level * 10)) * 1.5);
+
+            playerState.gold += goldWon;
+            p.exp += xpGained;
+
+            // Flag trainer coordinate as clear on current map
+            if (battleState.trainerCoord) {
+                const [tx, ty] = battleState.trainerCoord.split(',').map(Number);
+                mapData[ty][tx] = 'G'; // Revert back to plain grass
+            }
+
+            playSound('catch_success');
+            log.innerText = `Victory! You defeated ${battleState.trainerName}!\nGained 🪙 ${goldWon}g and ${xpGained} XP!`;
+
+            let leveledUp = false;
+            if (p.exp >= 100) {
+                p.level++;
+                p.exp = p.exp - 100;
+                p.maxHp = Math.round(p.maxHp * 1.12);
+                p.hp = p.maxHp;
+                p.atk = Math.round(p.atk * 1.1);
+                p.def = Math.round(p.def * 1.1);
+                leveledUp = true;
+            }
+
+            setTimeout(() => {
+                if (leveledUp) {
+                    showToast(`${p.name} leveled up to Lv.${p.level}!`, 'border-yellow-400');
+                }
+                closeBattle();
+            }, 3000);
+        }
+
+        // --- BOSS BATTLE REWARDS & BADGES ---
+        function winBossBattle() {
+            const p = battleState.player;
+            const e = battleState.enemy;
+            const log = document.getElementById('battle-log');
+            const data = battleState.gymData;
+
+            playSound('catch_success');
+
+            if (battleState.isLeague) {
+                // Beat the League Champion! Trigger the Victory Screen
+                log.innerText = `AMAZING! You defeated Champion ${data.name}!`;
+                setTimeout(() => {
+                    triggerLeagueVictory();
+                }, 2000);
+            } else {
+                // Earned a Gym Badge
+                const goldWon = 150 + (e.level * 5);
+                playerState.gold += goldWon;
+                
+                playerState.badges.push({ name: data.badgeName, emoji: data.badgeEmoji });
+                log.innerText = `${e.name} defeated!\nGym Leader ${data.name} grants you the ${data.badgeName.toUpperCase()} ${data.badgeEmoji}!\nGained 🪙 ${goldWon}g!`;
+
+                setTimeout(() => {
+                    showToast(`Unlocked ${data.badgeName}!`, 'border-yellow-500');
+                    closeBattle();
+                }, 3500);
+            }
+        }
+
+        function triggerLeagueVictory() {
+            document.getElementById('battle-screen').classList.add('hidden');
+            const victoryScreen = document.getElementById('victory-screen');
+            victoryScreen.classList.remove('hidden');
+
+            const championsBeast = playerState.party[playerState.activeBeastIndex];
+            document.getElementById('fame-beast-emoji').innerText = championsBeast.emoji;
+            document.getElementById('fame-beast-name').innerText = championsBeast.name;
+            document.getElementById('fame-beast-stats').innerText = `Level ${championsBeast.level} • ${championsBeast.type} Type`;
+            document.getElementById('next-cycle-num').innerText = playerState.cycle + 1;
+        }
+
+        // --- PRESTIGE RESET (INFINITE CYCLE) ---
+        function prestigeAndRestart() {
+            playSound('heal');
+            playerState.cycle++;
+            playerState.badges = []; // Reset Badges for the new hard cycle
+            playerState.currentLocationIndex = 1; // Return to the start
+            playerState.pos = { x: 4, y: 4 };
+
+            // Boost party levels by a small margin as prestige bonus
+            playerState.party.forEach(b => {
+                b.hp = b.maxHp;
+            });
+
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('overworld-screen').classList.remove('hidden');
+            generateMap();
+            renderPartyList();
+            showToast(`Welcome to Cycle ${playerState.cycle}! Gym Leaders are much stronger!`, 'border-amber-400');
+
+            saveGame(true);
+        }
+
+        function loseActiveBeast() {
+            const log = document.getElementById('battle-log');
+            log.innerText = `${battleState.player.name} fainted!`;
+
+            const liveIndex = playerState.party.findIndex(b => b.hp > 0);
+            if (liveIndex !== -1) {
+                playerState.activeBeastIndex = liveIndex;
+                battleState.player = playerState.party[liveIndex];
+                setTimeout(() => {
+                    log.innerText = `Swapped in active partner: ${battleState.player.name}!`;
+                    setupBattleUI();
+                }, 1500);
+            } else {
+                log.innerText = "All your beasts have fainted! Returning you home safely.";
+                setTimeout(() => {
+                    playerState.pos = { x: 1, y: 1 };
+                    healAllParty();
+                    closeBattle();
+                }, 2500);
+            }
+        }
+
+        // --- STREAMING_CHUNK: Processing Ball Catch Metrics and EXP Awards ---
+        // --- CAPTURE BEASTS SYSTEM WITH XP AWARD ---
+        function throwBeastBall() {
+            if (playerState.inventory.balls <= 0) {
+                playSound('wrong');
+                document.getElementById('battle-log').innerText = "You have no Beast Balls left!";
+                return;
+            }
+
+            playerState.inventory.balls--;
+            document.getElementById('battle-balls-count').innerText = playerState.inventory.balls;
+            
+            const e = battleState.enemy;
+            const p = battleState.player;
+            const log = document.getElementById('battle-log');
+
+            const hpRatio = e.hp / e.maxHp;
+            const captureRate = 0.85 - (hpRatio * 0.5); // Low HP = High catch rate
+
+            log.innerText = `You threw a Beast Ball at ${e.name}!`;
+            playSound('catch_shake');
+
+            const sprite = document.getElementById('enemy-sprite-effect');
+            sprite.classList.add('animate-ping');
+
+            setTimeout(() => {
+                sprite.classList.remove('animate-ping');
+                if (Math.random() < captureRate) {
+                    playSound('catch_success');
+                    
+                    // --- Award Capture EXP to active partner ---
+                    const xpGained = Math.round(25 + (e.level * 8));
+                    p.exp += xpGained;
+                    
+                    log.innerText = `Gotcha! ${e.name} was caught successfully! 🎉\n${p.name} gained ${xpGained} Catch EXP!`;
+
+                    let leveledUp = false;
+                    if (p.exp >= 100) {
+                        p.level++;
+                        p.exp = p.exp - 100;
+                        p.maxHp = Math.round(p.maxHp * 1.12);
+                        p.hp = p.maxHp;
+                        p.atk = Math.round(p.atk * 1.1);
+                        p.def = Math.round(p.def * 1.1);
+                        leveledUp = true;
+                    }
+
+                    // Visually update the EXP bar immediately on the battle screen
+                    updateHPBar('player');
+
+                    if (playerState.party.length < 6) {
+                        playerState.party.push(e);
+                    } else {
+                        showToast("Party full! Caught beast sent to cloud storage.", "border-sky-500");
+                    }
+                    
+                    setTimeout(() => {
+                        if (leveledUp) {
+                            showToast(`${p.name} leveled up to Lv.${p.level}!`, 'border-yellow-400');
+                        }
+                        closeBattle();
+                    }, 2500);
+                } else {
+                    playSound('wrong');
+                    log.innerText = `Oh no! The wild ${e.name} broke free!`;
+                    setTimeout(() => {
+                        setControlsState(false);
+                        executeEnemyMove();
+                    }, 1500);
+                }
+            }, 1200);
+        }
+
+        // --- STREAMING_CHUNK: Processing Potion Application and Combat Utility ---
+        // --- BATTLE ITEM USAGE ---
+        function usePotionInBattle() {
+            const p = battleState.player;
+            if (playerState.inventory.potions <= 0) {
+                playSound('wrong');
+                document.getElementById('battle-log').innerText = "You have no potions left!";
+                return;
+            }
+
+            if (p.hp >= p.maxHp) {
+                playSound('wrong');
+                document.getElementById('battle-log').innerText = `${p.name} is already at full health!`;
+                return;
+            }
+
+            playerState.inventory.potions--;
+            document.getElementById('battle-potions-count').innerText = playerState.inventory.potions;
+
+            p.hp = Math.min(p.maxHp, p.hp + 50);
+            playSound('heal');
+            updateHPBar('player');
+            
+            document.getElementById('battle-log').innerText = `Used potion! Restored 50 HP to ${p.name}!`;
+
+            setControlsState(false);
+            setTimeout(executeEnemyMove, 1500);
+        }
+
+        function fleeBattle() {
+            playSound('click');
+            document.getElementById('battle-log').innerText = "Got away safely!";
+            setTimeout(closeBattle, 1200);
+        }
+
+        function closeBattle() {
+            battleState = null;
+            document.getElementById('battle-screen').classList.add('hidden');
+            renderPartyList();
+            renderMap();
+        }
+
+        // Visual Damage Popup Overlay Helper
+        function showDamagePop(target, text) {
+            const pop = document.getElementById(`${target}-damage-pop`);
+            pop.innerText = text;
+            pop.classList.remove('hidden');
+            setTimeout(() => {
+                pop.classList.add('hidden');
+            }, 1200);
+        }
+
+        // --- STREAMING_CHUNK: Setting Up Firestore Cloud Storage Operations ---
+        // --- CLOUD STORAGE SAVE & RECOVERY ENGINE ---
+        async function saveGame(silent = false) {
+            if (!db || !userId) {
+                if (!silent) showToast("Cloud saving is currently offline.", "border-rose-500");
+                return;
+            }
+
+            // Guarded Firestore Path Rule: /artifacts/{appId}/users/{userId}/saves/current
+            const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
+            
+            try {
+                await setDoc(saveDocRef, {
+                    playerState: playerState,
+                    timestamp: new Date().toISOString()
+                });
+                
+                if (!silent) {
+                    playSound('heal');
+                    showToast("Game saved successfully!", "border-emerald-500");
+                }
+            } catch (err) {
+                console.error("Save failed:", err);
+                if (!silent) showToast("Save failed. Try again.", "border-rose-500");
+            }
+        }
+
+        async function loadGame() {
+            if (!db || !userId) {
+                showToast("Cannot connect to cloud database.", "border-rose-500");
+                return;
+            }
+
+            const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
+            
+            try {
+                const docSnap = await getDoc(saveDocRef);
+                if (docSnap.exists()) {
+                    const savedData = docSnap.data();
+                    playerState = savedData.playerState;
+
+                    // Sync active values
+                    playSound('heal');
+                    document.getElementById('welcome-screen').classList.add('hidden');
+                    document.getElementById('overworld-screen').classList.remove('hidden');
+
+                    generateMap();
+                    renderPartyList();
+                    showToast("Welcome back! Game loaded successfully.", "border-emerald-500");
+                } else {
+                    showToast("No saved game found on your profile.", "border-rose-500");
+                }
+            } catch (err) {
+                console.error("Load failed:", err);
+                showToast("Failed to load save file.", "border-rose-500");
+            }
+        }
+
+        async function checkSavedGameOnBoot() {
+            if (!db || !userId) return;
+
+            const saveDocRef = doc(db, 'artifacts', appId, 'users', userId, 'saves', 'current');
+            
+            try {
+                const docSnap = await getDoc(saveDocRef);
+                const btn = document.getElementById('continue-save-btn');
+                if (docSnap.exists()) {
+                    btn.disabled = false;
+                    btn.innerText = "CONTINUE ADVENTURE 📂";
+                    btn.className = "w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white border-4 border-indigo-400 font-bold text-lg transition-all transform active:scale-95 shadow-lg";
+                } else {
+                    btn.disabled = true;
+                    btn.innerText = "NO SAVES FOUND 📭";
+                    btn.className = "w-full py-4 px-6 rounded-2xl bg-slate-800 text-slate-500 border-4 border-slate-700 font-bold text-lg cursor-not-allowed";
+                }
+            } catch (err) {
+                console.error("Boot save check failed:", err);
+            }
+        }
+
+        // --- STREAMING_CHUNK: Booting Authentication State Handlers ---
+        // --- BOOT PROCESS & AUTHENTICATION HANDLERS ---
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.warn("No Firebase configuration detected. Running offline model.");
+                const btn = document.getElementById('continue-save-btn');
+                btn.innerText = "OFFLINE MODE 📴";
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate before query priority
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        await checkSavedGameOnBoot();
+                    } else {
+                        userId = null;
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase init crash caught:", error);
+            }
+        }
+
+        // --- EXPOSE INTERACTIVE ACTIONS TO HTML SCOPE ---
+        window.chooseStarter = chooseStarter;
+        window.movePlayer = movePlayer;
+        window.switchTab = switchTab;
+        window.buyItem = buyItem;
+        window.executeMove = executeMove;
+        window.throwBeastBall = throwBeastBall;
+        window.usePotionInBattle = usePotionInBattle;
+        window.fleeBattle = fleeBattle;
+        window.openBattleSwitchModal = openBattleSwitchModal;
+        window.closeBattleSwitchModal = closeBattleSwitchModal;
+        window.saveGame = saveGame;
+        window.loadGame = loadGame;
+        window.startNewGameFlow = startNewGameFlow;
+        window.returnToMainMenu = returnToMainMenu;
+        window.prestigeAndRestart = prestigeAndRestart;
+
+        // --- INITIAL KICKSTART ---
+        window.onload = function () {
+            initializeFirebase();
+        }
+    </script>
+</body>
+</html>
