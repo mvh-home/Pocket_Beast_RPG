@@ -1422,6 +1422,7 @@
             sprite.classList.add('animate-ping');
 
             setTimeout(() => {
+                sprite.spriteClass = 'animate-ping';
                 sprite.classList.remove('animate-ping');
                 if (Math.random() < captureRate) {
                     playSound('catch_success');
@@ -1688,6 +1689,7 @@
             const victoryScreen = document.getElementById('victory-screen');
             const switchModal = document.getElementById('battle-switch-modal');
 
+            // Prevent input actions if inside full-screen overlay states
             if (!battleScreen.classList.contains('hidden') || 
                 !welcomeScreen.classList.contains('hidden') || 
                 !starterScreen.classList.contains('hidden') || 
@@ -1697,6 +1699,8 @@
             }
 
             const key = e.key.toLowerCase();
+            
+            // Block scrolling when actively pressing control pad keys
             if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
                 e.preventDefault();
             }
@@ -1705,6 +1709,11 @@
             if (key === 'arrowdown' || key === 's') movePlayer(0, 1);
             if (key === 'arrowleft' || key === 'a') movePlayer(-1, 0);
             if (key === 'arrowright' || key === 'd') movePlayer(1, 0);
+        });
+
+        // Auto-focus window on click to guarantee keyboard events are captured
+        window.addEventListener('click', () => {
+            window.focus();
         });
 
         // --- INITIAL KICKSTART ---
